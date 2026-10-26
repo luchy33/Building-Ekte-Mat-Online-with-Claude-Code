@@ -1,0 +1,15 @@
+{% macro csrf_field() %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endmacro %}
+
+{% macro error_list(errors) %}
+  {% if errors %}
+    <div class="errors" role="alert"><ul>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul></div>
+  {% endif %}
+{% endmacro %}
+
+{% macro food_image(item, alt_suffix="") %}
+  {% if item.image_filename %}
+    <img src="{{ url_for('shop.image', filename=item.image_filename) }}" alt="{{ item.name_en }}{{ alt_suffix }}">
+  {% else %}
+    <div class="placeholder">No picture yet</div>
+  {% endif %}
+{% endmacro %}

@@ -1,13 +1,9 @@
-from app.models import EventType, FoodItem
-from app.models.repositories import FoodItemRepository
-
-
-def test_shop_index_lists_food_items(app, client):
-    with app.app_context():
-        FoodItemRepository().add(FoodItem("Fiskesuppe", "Fish soup", 189, EventType.LUNCH_MEETING))
-
+def test_shop_index_lists_food_items(client, food_item):
     response = client.get("/")
 
     assert response.status_code == 200
-    assert b"Fish soup" in response.data
-    assert b"189 NOK per person" in response.data
+    html = response.get_data(as_text=True)
+    assert "Fish soup" in html
+    assert "189 NOK" in html
+    assert "Minimum order: 10" in html
+    assert "Lunch meeting" in html

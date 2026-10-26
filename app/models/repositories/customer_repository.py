@@ -27,6 +27,11 @@ class CustomerRepository:
         row = get_db().execute("SELECT * FROM customer WHERE email = ?", (email,)).fetchone()
         return self._to_customer(row) if row else None
 
+    def get_by_organisation_number(self, organisation_number: str) -> Optional[Customer]:
+        row = get_db().execute("SELECT * FROM customer WHERE organisation_number = ?",
+                               (organisation_number,)).fetchone()
+        return self._to_customer(row) if row else None
+
     def list_all(self) -> list[Customer]:
         rows = get_db().execute("SELECT * FROM customer ORDER BY name").fetchall()
         return [self._to_customer(r) for r in rows]

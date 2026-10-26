@@ -2,5 +2,12 @@
 {% block title %}My account – Ekte Mat Online{% endblock %}
 {% block content %}
   <h2>My account</h2>
-  <p>Log-in, cart and order history will be added in a later plan.</p>
+  <table>
+    <tr><th>Name</th><td>{{ g.user.name }}</td></tr>
+    <tr><th>E-mail</th><td>{{ g.user.email }}</td></tr>
+    {% if g.user.phone %}<tr><th>Phone</th><td>{{ g.user.phone }}</td></tr>{% endif %}
+    <tr><th>Customer type</th><td>{{ 'Company' if g.user.customer_type == 'corporate' else 'Private customer' }}</td></tr>
+    {% if g.user.organisation_number %}<tr><th>Organisation number</th><td>{{ g.user.organisation_number }}</td></tr>{% endif %}
+  </table>
+  <p class="muted">Your orders and questions will be shown here (coming in a later plan).</p>
 {% endblock %}

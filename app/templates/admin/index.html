@@ -2,5 +2,9 @@
 {% block title %}Admin – Ekte Mat Online{% endblock %}
 {% block content %}
   <h2>Admin panel</h2>
-  <p>Management of food items, images, orders and questions will be added in a later plan.</p>
+  <ul>
+    <li><a href="{{ url_for('admin.food_items') }}">Food items and pictures</a></li>
+    <li class="muted">Orders (coming in a later plan)</li>
+    <li class="muted">Questions (coming in a later plan)</li>
+  </ul>
 {% endblock %}

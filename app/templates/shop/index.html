@@ -1,20 +1,29 @@
 {% extends "base.html" %}
+{% from "_macros.html" import food_image %}
 {% block title %}Menu – Ekte Mat Online{% endblock %}
 {% block content %}
   <h2>Our menu</h2>
-  {% for event_type, items in menu.items() if items %}
+  {% for category, items in menu.items() if items %}
     <section>
-      <h3>{{ event_type.value.replace('_', ' ') | capitalize }}</h3>
-      <ul>
+      <h3>{{ category.label }}</h3>
+      <div class="cards">
         {% for item in items %}
-          <li>
-            <strong>{{ item.name_en }}</strong> ({{ item.name_no }}) –
-            <span class="price">{{ item.price_per_person_nok }} NOK per person</span>
-            {% if item.description %}<br>{{ item.description }}{% endif %}
-            {% if item.allergen_list %}<br><small>Allergens: {{ item.allergen_list | join(', ') }}</small>{% endif %}
-          </li>
+          <article class="card">
+            {{ food_image(item) }}
+            <div class="body">
+              <h4>{{ item.name_en }}</h4>
+              <div class="muted">{{ item.name_no }}</div>
+              {% if item.description %}<p>{{ item.description }}</p>{% endif %}
+              <p><strong>{{ item.price_nok }} NOK</strong> per portion<br>
+                 <small>Minimum order: {{ item.min_order_quantity }}</small></p>
+              {% if item.allergens %}
+                <div><small>Allergens: {{ item.sorted_allergens() | map(attribute='label') | join(', ') }}</small></div>
+              {% endif %}
+              {% for label in item.sorted_dietary_labels() %}<span class="tag">{{ label.label }}</span>{% endfor %}
+            </div>
+          </article>
         {% endfor %}
-      </ul>
+      </div>
     </section>
   {% else %}
     <p>The menu is empty. Run <code>python seed.py</code> to add synthetic food items.</p>

@@ -12,11 +12,18 @@ def create_app(config_class=Config, **overrides):
     app.config.update(overrides)
 
     os.makedirs(app.instance_path, exist_ok=True)
-    if not os.path.isabs(app.config["DATABASE"]):
-        app.config["DATABASE"] = os.path.join(app.instance_path, app.config["DATABASE"])
+    for key in ("DATABASE", "UPLOAD_FOLDER"):
+        if not os.path.isabs(app.config[key]):
+            app.config[key] = os.path.join(app.instance_path, app.config[key])
 
     from app.models.repositories import db
     db.init_app(app)
+
+    from app.models.services.image_generator import create_image_generator
+    app.extensions["image_generator"] = create_image_generator(app.config["IMAGE_GENERATOR"])
+
+    from app.controllers import auth
+    auth.init_app(app)
 
     from app.controllers.shop import bp as shop_bp
     from app.controllers.account import bp as account_bp

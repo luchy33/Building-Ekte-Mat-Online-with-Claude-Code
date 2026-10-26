@@ -1,4 +1,4 @@
--- Ekte Mat Online - SQLite schema (skeleton, plan 01).
+-- Ekte Mat Online - SQLite schema (plans 01-02).
 -- Money columns are whole NOK. Dates/times are ISO 8601 text.
 
 DROP TABLE IF EXISTS question;
@@ -6,18 +6,39 @@ DROP TABLE IF EXISTS order_line;
 DROP TABLE IF EXISTS guest_group;
 DROP TABLE IF EXISTS customer_order;
 DROP TABLE IF EXISTS customer;
+DROP TABLE IF EXISTS food_item_dietary_label;
+DROP TABLE IF EXISTS food_item_allergen;
+DROP TABLE IF EXISTS food_item_category;
 DROP TABLE IF EXISTS food_item;
 
 CREATE TABLE food_item (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  name_no TEXT NOT NULL,
   name_en TEXT NOT NULL,
+  name_no TEXT NOT NULL,
   description TEXT NOT NULL DEFAULT '',
-  price_per_person_nok INTEGER NOT NULL CHECK (price_per_person_nok >= 0),
-  event_type TEXT NOT NULL CHECK (event_type IN ('lunch_meeting', 'party', 'wedding_dinner', 'other')),
-  allergens TEXT NOT NULL DEFAULT '',
+  price_nok INTEGER NOT NULL CHECK (price_nok >= 0),
+  min_order_quantity INTEGER NOT NULL DEFAULT 1 CHECK (min_order_quantity >= 1),
   image_filename TEXT,
-  active INTEGER NOT NULL DEFAULT 1 CHECK (active IN (0, 1))
+  published INTEGER NOT NULL DEFAULT 1 CHECK (published IN (0, 1))
+);
+
+-- Many-to-many value sets of a food item (relationships in the later Neo4j model).
+CREATE TABLE food_item_category (
+  food_item_id INTEGER NOT NULL REFERENCES food_item (id) ON DELETE CASCADE,
+  value TEXT NOT NULL CHECK (value IN ('birthday', 'confirmation', 'wedding', 'conference', 'christmas_party', 'lunch_meeting', 'other')),
+  PRIMARY KEY (food_item_id, value)
+);
+
+CREATE TABLE food_item_allergen (
+  food_item_id INTEGER NOT NULL REFERENCES food_item (id) ON DELETE CASCADE,
+  value TEXT NOT NULL CHECK (value IN ('gluten', 'crustaceans', 'eggs', 'fish', 'peanuts', 'soybeans', 'milk', 'nuts', 'celery', 'mustard', 'sesame', 'sulphites', 'lupin', 'molluscs')),
+  PRIMARY KEY (food_item_id, value)
+);
+
+CREATE TABLE food_item_dietary_label (
+  food_item_id INTEGER NOT NULL REFERENCES food_item (id) ON DELETE CASCADE,
+  value TEXT NOT NULL CHECK (value IN ('vegetarian', 'vegan', 'gluten_free', 'lactose_free')),
+  PRIMARY KEY (food_item_id, value)
 );
 
 CREATE TABLE customer (
@@ -37,7 +58,7 @@ CREATE TABLE customer_order (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   order_number TEXT NOT NULL UNIQUE,
   customer_id INTEGER NOT NULL REFERENCES customer (id),
-  event_type TEXT NOT NULL CHECK (event_type IN ('lunch_meeting', 'party', 'wedding_dinner', 'other')),
+  event_type TEXT NOT NULL CHECK (event_type IN ('birthday', 'confirmation', 'wedding', 'conference', 'christmas_party', 'lunch_meeting', 'other')),
   event_date TEXT NOT NULL,
   delivery_method TEXT NOT NULL CHECK (delivery_method IN ('delivery', 'pick_up')),
   delivery_address TEXT,

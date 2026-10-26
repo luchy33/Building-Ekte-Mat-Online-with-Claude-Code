@@ -11,8 +11,9 @@ It has a customer shop (menu by event, cart, orders, questions) and an admin pan
 ## MVC layout
 
 - `app/models/` – domain classes (FoodItem, Order, OrderLine, Customer, Question …) and repositories
-- `app/models/repositories/` – the only code that touches storage (SQLite now, Neo4j in Oblig 5)
-- `app/controllers/` – Flask blueprints: `shop`, `account`, `admin`
+- `app/models/repositories/` – the only code that touches storage: SQLite now (Neo4j in Oblig 5) and image files (`ImageStore`)
+- `app/models/services/` – external services: the Claude image generator (`claude-opus-5-5`, draws SVG)
+- `app/controllers/` – Flask blueprints: `shop`, `account`, `admin`; `auth.py` has login/admin decorators and CSRF
 - `app/templates/` – Jinja2 views, one folder per blueprint
 - `docs/plans/` – agreed plans for larger features
 - `labb_claude_cowork/` – Lab 7 requirements and models (read-only source material)
@@ -22,7 +23,7 @@ It has a customer shop (menu by event, cart, orders, questions) and an admin pan
 ```bash
 python -m venv .venv && source .venv/bin/activate   # Windows PowerShell: .venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-python seed.py               # synthetic food items, one admin, test customers
+python seed.py               # resets DB + uploads: synthetic food items, one admin, test customers
 flask --app app run          # http://127.0.0.1:5000
 pytest
 ```
@@ -33,6 +34,9 @@ pytest
 - Every feature has pytest tests in `tests/`.
 - Larger features start in plan mode; the agreed plan is saved in `docs/plans/`.
 - Never commit secrets or API keys; use `.env` (listed in `.gitignore`).
+- Tests never call the Claude API; they use `FakeImageGenerator` (`IMAGE_GENERATOR=fake`).
+- Every POST form includes `csrf_token()`; admin routes use `@admin_required`.
+- Generated or uploaded images are untrusted: SVG only via `sanitise_svg`, served only through `image_response`.
 - Synthetic data only.
 - Use British English in code, comments and UI text.
 - All prices are in NOK.

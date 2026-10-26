@@ -1,7 +1,7 @@
 from datetime import date, datetime
 from typing import Optional
 
-from app.models.enums import DeliveryMethod, EventType, OrderStatus, PaymentStatus
+from app.models.enums import DeliveryMethod, EventCategory, OrderStatus, PaymentStatus
 from app.models.order import GuestGroup, Order, OrderLine
 from app.models.repositories.db import get_db
 
@@ -74,7 +74,7 @@ class OrderRepository:
             id=row["id"],
             order_number=row["order_number"],
             customer_id=row["customer_id"],
-            event_type=EventType(row["event_type"]),
+            event_type=EventCategory(row["event_type"]),
             event_date=date.fromisoformat(row["event_date"]),
             delivery_method=DeliveryMethod(row["delivery_method"]),
             delivery_address=row["delivery_address"],

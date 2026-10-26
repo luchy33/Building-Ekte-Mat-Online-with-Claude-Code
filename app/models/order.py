@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from datetime import date, datetime
 from typing import Optional
 
-from app.models.enums import DeliveryMethod, EventType, OrderStatus, PaymentStatus
+from app.models.enums import DeliveryMethod, EventCategory, OrderStatus, PaymentStatus
 
 
 @dataclass
@@ -31,7 +31,7 @@ class OrderLine:
 class Order:
     order_number: str
     customer_id: int
-    event_type: EventType
+    event_type: EventCategory
     event_date: date
     delivery_method: DeliveryMethod
     delivery_address: Optional[str] = None
