@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Ekte Mat Online{% endblock %}</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 960px; margin: 0 auto; padding: 0 16px; color: #222; }
+    header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd; }
+    nav a { margin-left: 16px; }
+    .price { white-space: nowrap; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1><a href="{{ url_for('shop.index') }}">Ekte Mat</a></h1>
+    <nav>
+      <a href="{{ url_for('shop.index') }}">Menu</a>
+      <a href="{{ url_for('account.index') }}">My account</a>
+      <a href="{{ url_for('admin.index') }}">Admin</a>
+    </nav>
+  </header>
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Menu – Ekte Mat Online{% endblock %}
+{% block content %}
+  <h2>Our menu</h2>
+  {% for event_type, items in menu.items() if items %}
+    <section>
+      <h3>{{ event_type.value.replace('_', ' ') | capitalize }}</h3>
+      <ul>
+        {% for item in items %}
+          <li>
+            <strong>{{ item.name_en }}</strong> ({{ item.name_no }}) –
+            <span class="price">{{ item.price_per_person_nok }} NOK per person</span>
+            {% if item.description %}<br>{{ item.description }}{% endif %}
+            {% if item.allergen_list %}<br><small>Allergens: {{ item.allergen_list | join(', ') }}</small>{% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% else %}
+    <p>The menu is empty. Run <code>python seed.py</code> to add synthetic food items.</p>
+  {% endfor %}
+{% endblock %}
