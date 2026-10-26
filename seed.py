@@ -6,14 +6,29 @@ WARNING: drops all tables first. Synthetic data only – no real customers.
 import os
 import shutil
 from datetime import date, timedelta
+from pathlib import Path
 
 from app import create_app
 from app.models import (Allergen as A, Customer, DeliveryMethod, DietaryLabel as D,
                         EventCategory as E, FoodItem, GuestGroup, Order, OrderLine)
-from app.models.repositories import CustomerRepository, FoodItemRepository, OrderRepository
+from app.models.repositories import CustomerRepository, FoodItemRepository, ImageStore, OrderRepository
 from app.models.repositories.db import init_db
 
 DEV_PASSWORD = "ektemat-dev"
+
+# Front picture per dish (English name -> file in seed_data/images/), chosen by the team.
+SEED_IMAGE_DIR = Path(__file__).parent / "seed_data" / "images"
+FOOD_IMAGES = {
+    "Fish soup with Bergen cod": "fish-soup.webp",
+    "Slow-cooked lamb from Voss": "slow-cooked-lamb.jpg",
+    "Beetroot and chickpea salad": "beetroot-chickpea-salad.jpg",
+    "Rakfisk tasting": "rakfisk.jpg",
+    "Pinnekjøtt Christmas dinner": "pinnekjott.jpg",
+    "Tapas platter": "tapas-platter.jpg",
+    "Three-course wedding dinner": "three-course-wedding-dinner.jpg",
+    "Kransekake (almond ring cake)": "kransekake.jpg",
+    "Coffee and cake": "coffee-and-cake.jpg",
+}
 
 # Lunch dishes follow the autumn menu draft in
 # labb_claude_cowork/docs/04_Data/04_reference_lunch-menu-autumn_2026-10-20.txt
@@ -66,6 +81,15 @@ def main() -> None:
         for item in FOOD_ITEMS:
             food_repo.add(item)
 
+        store = ImageStore()
+        for item in FOOD_ITEMS:
+            image_name = FOOD_IMAGES.get(item.name_en)
+            if image_name:
+                data = (SEED_IMAGE_DIR / image_name).read_bytes()
+                ext = ImageStore.validate_upload(image_name, data)  # same checks as an admin upload
+                item.image_filename = store.promote(store.save_pending(data, ext), item.id)
+                food_repo.set_image(item.id, item.image_filename)
+
         customer_repo = CustomerRepository()
         admin = Customer("Ekte Mat Admin", "admin@ektemat.example", is_admin=True)
         private = Customer("Test Private Customer", "private.customer@example.com", phone="+47 400 00 001")
@@ -90,7 +114,8 @@ def main() -> None:
                    OrderLine(lamb.id, 10, lamb.price_nok)],
         ))
 
-    print(f"Seeded {len(FOOD_ITEMS)} food items (1 unpublished), 3 customers (1 admin) and 1 sample order.")
+    print(f"Seeded {len(FOOD_ITEMS)} food items (1 unpublished, {len(FOOD_IMAGES)} with pictures), "
+          "3 customers (1 admin) and 1 sample order.")
 
 
 if __name__ == "__main__":

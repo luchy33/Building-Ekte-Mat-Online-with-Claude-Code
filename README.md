@@ -34,7 +34,7 @@ pytest
 
 `flask --app app init-db` creates empty tables without seed data. The SQLite file is `instance/ektemat.sqlite`.
 
-Seeded accounts: `admin@ektemat.example` (admin), `private.customer@example.com` and `lunch@corporate.example.com`. They all use the password set in `SEED_PASSWORD` (default `ektemat-dev`). `python seed.py` also deletes uploaded pictures.
+Seeded accounts: `admin@ektemat.example` (admin), `private.customer@example.com` and `lunch@corporate.example.com`. They all use the password set in `SEED_PASSWORD` (default `ektemat-dev`). `python seed.py` also deletes uploaded pictures and attaches the team's dish pictures from `seed_data/images/`.
 
 ### AI-generated pictures (A2)
 
