@@ -32,6 +32,14 @@ class CustomerRepository:
                                (organisation_number,)).fetchone()
         return self._to_customer(row) if row else None
 
+    def get_many(self, ids) -> dict[int, Customer]:
+        ids = list(set(ids))
+        if not ids:
+            return {}
+        placeholders = ", ".join("?" * len(ids))
+        rows = get_db().execute(f"SELECT * FROM customer WHERE id IN ({placeholders})", ids).fetchall()
+        return {row["id"]: self._to_customer(row) for row in rows}
+
     def list_all(self) -> list[Customer]:
         rows = get_db().execute("SELECT * FROM customer ORDER BY name").fetchall()
         return [self._to_customer(r) for r in rows]

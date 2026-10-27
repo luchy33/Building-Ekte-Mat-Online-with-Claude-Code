@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% from "_macros.html" import status_badge, payment_badge, order_summary %}
+{% block title %}Order {{ order.order_number }} – Ekte Mat Online{% endblock %}
+{% block content %}
+  <h2>Order {{ order.order_number }}</h2>
+  <p>Status: {{ status_badge(order) }} &nbsp; Payment: {{ payment_badge(order) }}</p>
+  {% if order.status.value == 'submitted' %}
+    <p class="muted">Ekte Mat will look at your order and confirm it.</p>
+  {% endif %}
+  {{ order_summary(order, items) }}
+  <p><a href="{{ url_for('account.orders') }}">Back to my orders</a></p>
+{% endblock %}

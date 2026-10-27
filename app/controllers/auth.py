@@ -1,16 +1,18 @@
 """Login state, access decorators and CSRF protection shared by all blueprints."""
 import secrets
 from functools import wraps
+from typing import Optional
 
 from flask import abort, current_app, g, make_response, redirect, request, session, url_for
 
-from app.models.repositories import CustomerRepository
+from app.models.repositories import CustomerRepository, SessionCartRepository
 
 
 def init_app(app) -> None:
     app.before_request(load_logged_in_user)
     app.before_request(check_csrf)
     app.jinja_env.globals["csrf_token"] = csrf_token
+    app.context_processor(lambda: {"cart_count": SessionCartRepository().load().item_count})
 
 
 def load_logged_in_user() -> None:
@@ -19,12 +21,15 @@ def load_logged_in_user() -> None:
 
 
 def log_in(customer) -> None:
+    carts = SessionCartRepository()
+    cart = carts.load()  # keep the cart: customers fill it before logging in to order (C3)
     session.clear()  # new session on login, so an old session id cannot be reused
     session["customer_id"] = customer.id
+    carts.save(cart)
 
 
 def log_out() -> None:
-    session.clear()
+    session.clear()  # also empties the cart, so the next person on a shared computer starts clean
 
 
 def login_required(view):
@@ -47,7 +52,7 @@ def admin_required(view):
     return wrapped
 
 
-def is_safe_next(target: str | None) -> bool:
+def is_safe_next(target: Optional[str]) -> bool:
     """Only allow redirects to local paths such as /admin/ – never to other sites."""
     return bool(target) and target.startswith("/") and not target.startswith("//") and "\\" not in target
 

@@ -4,7 +4,8 @@
   <h2>Admin panel</h2>
   <ul>
     <li><a href="{{ url_for('admin.food_items') }}">Food items and pictures</a></li>
-    <li class="muted">Orders (coming in a later plan)</li>
+    <li><a href="{{ url_for('admin.orders') }}">Orders</a>
+      {% if submitted_count %}– <a href="{{ url_for('admin.orders', status='submitted') }}"><strong>{{ submitted_count }} waiting for approval</strong></a>{% endif %}</li>
     <li class="muted">Questions (coming in a later plan)</li>
   </ul>
 {% endblock %}

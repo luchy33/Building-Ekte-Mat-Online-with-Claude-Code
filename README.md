@@ -2,9 +2,9 @@
 
 Ordering system for Ekte Mat AS, a fictional catering company in Bergen. It replaces orders by e-mail, phone and Excel. Built with Flask (MVC) for INFO212 Oblig 4. All data is synthetic.
 
-- **Shop**: menu cards grouped by event (cart, orders and questions come in later plans)
-- **Account**: register, log in and log out (customers and admins share one login page)
-- **Admin**: add, edit and remove food items (A1), and upload or AI-generate their pictures with a preview before saving (A2). Orders and questions come in later plans.
+- **Shop**: menu cards grouped by event (C1) and a shopping cart with an estimated total; quantities below a dish's minimum order are refused (C2). Logged-in customers send the order with event date, delivery and guest groups with allergy notes (C3). Questions come in a later plan.
+- **Account**: register, log in and log out (customers and admins share one login page); *My orders* shows each order with its status and payment status (C4)
+- **Admin**: add, edit and remove food items (A1), and upload or AI-generate their pictures with a preview before saving (A2). Orders can be filtered by status and event date, and each order's status and payment status is managed on its own page (A3). Questions come in a later plan.
 
 ## Getting started
 
@@ -34,7 +34,7 @@ pytest
 
 `flask --app app init-db` creates empty tables without seed data. The SQLite file is `instance/ektemat.sqlite`.
 
-Seeded accounts: `admin@ektemat.example` (admin), `private.customer@example.com` and `lunch@corporate.example.com`. They all use the password set in `SEED_PASSWORD` (default `ektemat-dev`). `python seed.py` also deletes uploaded pictures and attaches the team's dish pictures from `seed_data/images/`.
+Seeded accounts: `admin@ektemat.example` (admin), `private.customer@example.com` and `lunch@corporate.example.com`. They all use the password set in `SEED_PASSWORD` (default `ektemat-dev`). `python seed.py` also deletes uploaded pictures, attaches the team's dish pictures from `seed_data/images/` and creates 5 demo orders covering every order and payment status.
 
 ### AI-generated pictures (A2)
 
@@ -53,7 +53,7 @@ On a food item's *Picture* page the admin can write an instruction, and Claude (
 - `app/controllers/`: blueprints `shop`, `account` and `admin`
 - `app/templates/`: Jinja2 views, one folder per blueprint
 - `tests/`: pytest
-- `docs/plans/`: agreed feature plans, [01-skeleton.md](docs/plans/01-skeleton.md), [02-auth-and-food-items.md](docs/plans/02-auth-and-food-items.md)
+- `docs/plans/`: agreed feature plans, [01-skeleton.md](docs/plans/01-skeleton.md), [02-auth-and-food-items.md](docs/plans/02-auth-and-food-items.md), [03-menu-and-cart.md](docs/plans/03-menu-and-cart.md), [04-orders.md](docs/plans/04-orders.md)
 - `labb_claude_cowork/`: Lab 7 requirements and models (read-only)
 
 See [CLAUDE.md](CLAUDE.md) for the project rules.

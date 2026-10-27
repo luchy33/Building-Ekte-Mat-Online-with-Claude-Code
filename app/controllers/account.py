@@ -1,8 +1,8 @@
-from flask import Blueprint, flash, g, redirect, render_template, request, url_for
+from flask import Blueprint, abort, flash, g, redirect, render_template, request, url_for
 
 from app.controllers.auth import is_safe_next, log_in, log_out, login_required
-from app.models import Customer
-from app.models.repositories import CustomerRepository
+from app.models import Customer, Question
+from app.models.repositories import CustomerRepository, FoodItemRepository, OrderRepository, QuestionRepository
 
 bp = Blueprint("account", __name__, url_prefix="/account")
 
@@ -10,7 +10,54 @@ bp = Blueprint("account", __name__, url_prefix="/account")
 @bp.route("/")
 @login_required
 def index():
-    return render_template("account/index.html")
+    orders = OrderRepository().list_by_customer(g.user.id)
+    return render_template("account/index.html", latest_order=orders[0] if orders else None,
+                           order_count=len(orders))
+
+
+# ----------------------------------------------------------------- C4 my orders
+
+@bp.route("/orders")
+@login_required
+def orders():
+    found = OrderRepository().list_by_customer(g.user.id)
+    question_counts = QuestionRepository().count_by_order(o.id for o in found)
+    return render_template("account/orders.html", orders=found, question_counts=question_counts)
+
+
+def _own_order_or_404(order_id):
+    order = OrderRepository().get(order_id)
+    if order is None or order.customer_id != g.user.id:
+        abort(404)  # also for other customers' orders, so order ids cannot be guessed
+    return order
+
+
+def _render_order(order, question_form=None, errors=None, status=200):
+    items = FoodItemRepository().get_many(line.food_item_id for line in order.lines)
+    return render_template("account/order_detail.html", order=order, items=items,
+                           questions=QuestionRepository().list_by_order(order.id),
+                           question_form=question_form or {}, errors=errors or []), status
+
+
+@bp.route("/orders/<int:order_id>")
+@login_required
+def order_detail(order_id):
+    return _render_order(_own_order_or_404(order_id))
+
+
+# ----------------------------------------------------------------- C5 questions about an order
+
+@bp.route("/orders/<int:order_id>/questions", methods=["POST"])
+@login_required
+def ask_question(order_id):
+    order = _own_order_or_404(order_id)
+    question = Question.for_order(order, g.user, request.form.get("subject", ""), request.form.get("body", ""))
+    errors = question.validate()
+    if errors:
+        return _render_order(order, request.form, errors, status=400)
+    QuestionRepository().add(question)
+    flash("Your question was sent. Ekte Mat will answer here.", "success")
+    return redirect(url_for("account.order_detail", order_id=order.id, _anchor="questions"))
 
 
 @bp.route("/register", methods=["GET", "POST"])

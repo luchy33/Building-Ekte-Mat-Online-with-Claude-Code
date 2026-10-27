@@ -8,9 +8,12 @@ from app.models.repositories.db import get_db
 
 class OrderRepository:
     def add(self, order: Order) -> Order:
-        """Save an order together with its guest groups and lines in one transaction."""
+        """Save an order together with its guest groups and lines in one transaction.
+        A new order without a number gets the next one, e.g. EM-2026-0007."""
         db = get_db()
         with db:
+            if not order.order_number:
+                order.order_number = self.next_order_number(order.created_at.year)
             cur = db.execute(
                 "INSERT INTO customer_order (order_number, customer_id, event_type, event_date,"
                 " delivery_method, delivery_address, status, payment_status, created_at)"
@@ -39,15 +42,47 @@ class OrderRepository:
         row = get_db().execute("SELECT * FROM customer_order WHERE id = ?", (order_id,)).fetchone()
         return self._to_order(row) if row else None
 
-    def list_all(self) -> list[Order]:
-        rows = get_db().execute("SELECT * FROM customer_order ORDER BY event_date, id").fetchall()
-        return [self._to_order(r) for r in rows]
+    def next_order_number(self, year: Optional[int] = None) -> str:
+        year = year or date.today().year
+        prefix = f"EM-{year}-"
+        row = get_db().execute(
+            "SELECT MAX(CAST(SUBSTR(order_number, ?) AS INTEGER)) FROM customer_order WHERE order_number LIKE ?",
+            (len(prefix) + 1, prefix + "%"),
+        ).fetchone()
+        return f"{prefix}{(row[0] or 0) + 1:04d}"
 
-    def list_by_customer(self, customer_id: int) -> list[Order]:
+    def search(self, status: Optional[OrderStatus] = None, date_from: Optional[date] = None,
+               date_to: Optional[date] = None, customer_id: Optional[int] = None,
+               newest_first: bool = False) -> list[Order]:
+        """Orders matching all given filters. Event dates are inclusive at both ends."""
+        conditions, params = [], []
+        if status is not None:
+            conditions.append("status = ?")
+            params.append(status.value)
+        if date_from is not None:
+            conditions.append("event_date >= ?")
+            params.append(date_from.isoformat())
+        if date_to is not None:
+            conditions.append("event_date <= ?")
+            params.append(date_to.isoformat())
+        if customer_id is not None:
+            conditions.append("customer_id = ?")
+            params.append(customer_id)
+        where = f" WHERE {' AND '.join(conditions)}" if conditions else ""
+        direction = "DESC" if newest_first else "ASC"
         rows = get_db().execute(
-            "SELECT * FROM customer_order WHERE customer_id = ? ORDER BY event_date DESC", (customer_id,)
+            f"SELECT * FROM customer_order{where} ORDER BY event_date {direction}, id {direction}", params
         ).fetchall()
         return [self._to_order(r) for r in rows]
+
+    def list_all(self) -> list[Order]:
+        return self.search()
+
+    def list_by_customer(self, customer_id: int) -> list[Order]:
+        return self.search(customer_id=customer_id, newest_first=True)
+
+    def count_by_status(self, status: OrderStatus) -> int:
+        return get_db().execute("SELECT COUNT(*) FROM customer_order WHERE status = ?", (status.value,)).fetchone()[0]
 
     def update_status(self, order: Order) -> None:
         """Persist status and payment status. Transition rules are checked in Order.change_status."""

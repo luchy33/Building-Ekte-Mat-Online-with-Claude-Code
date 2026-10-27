@@ -55,3 +55,26 @@ def food_item(app):
         return FoodItemRepository().add(FoodItem(
             name_en="Fish soup", name_no="Fiskesuppe", price_nok=189,
             categories={EventCategory.LUNCH_MEETING}, min_order_quantity=10))
+
+
+@pytest.fixture
+def make_order(app, food_item):
+    """Create an order directly in the database: make_order(customer, event_date=..., status=...)."""
+    from datetime import date, timedelta
+
+    from app.models import DeliveryMethod, GuestGroup, Order, OrderLine
+    from app.models.repositories import OrderRepository
+
+    def make(customer, event_date=None, status=None, payment_status=None, notes=None):
+        order = Order(order_number="", customer_id=customer.id, event_type=EventCategory.LUNCH_MEETING,
+                      event_date=event_date or date.today() + timedelta(days=10),
+                      delivery_method=DeliveryMethod.PICK_UP,
+                      guest_groups=[GuestGroup(10, "Main group"), GuestGroup(2, "Allergies", notes)],
+                      lines=[OrderLine(food_item.id, 12, food_item.price_nok)])
+        if status:
+            order.status = status
+        if payment_status:
+            order.payment_status = payment_status
+        with app.app_context():
+            return OrderRepository().add(order)
+    return make

@@ -1,9 +1,13 @@
+from datetime import date, datetime
+
 from flask import (Blueprint, abort, current_app, flash, redirect, render_template, request,
                    session, url_for)
 
 from app.controllers.auth import admin_required, image_response
-from app.models import Allergen, DietaryLabel, EventCategory, FoodItem, FoodItemInUseError, ImageError
-from app.models.repositories import FoodItemRepository, ImageStore
+from app.models import (Allergen, DietaryLabel, EventCategory, FoodItem, FoodItemInUseError, ImageError,
+                        OrderStatus, PaymentStatus)
+from app.models.repositories import (CustomerRepository, FoodItemRepository, ImageStore, OrderRepository,
+                                     QuestionRepository)
 from app.models.repositories.image_store import extension_of
 
 bp = Blueprint("admin", __name__, url_prefix="/admin")
@@ -14,7 +18,9 @@ MAX_INSTRUCTION_LENGTH = 1000
 @bp.route("/")
 @admin_required
 def index():
-    return render_template("admin/index.html")
+    return render_template("admin/index.html",
+                           submitted_count=OrderRepository().count_by_status(OrderStatus.SUBMITTED),
+                           unanswered_count=QuestionRepository().count_unanswered())
 
 
 # ----------------------------------------------------------------- A1 food items
@@ -228,3 +234,115 @@ def pending_image(token):
     except ImageError:
         abort(404)
     return image_response(data, ImageStore.mime_type(token))
+
+
+# ----------------------------------------------------------------- A3 orders
+
+def _date_filter(name: str, errors: list[str]):
+    value = request.args.get(name, "").strip()
+    if not value:
+        return None
+    try:
+        return date.fromisoformat(value)
+    except ValueError:
+        errors.append(f"“{value}” is not a valid date and was ignored.")
+        return None
+
+
+@bp.route("/orders")
+@admin_required
+def orders():
+    errors = []
+    status = OrderStatus._value2member_map_.get(request.args.get("status", ""))
+    if request.args.get("status") and status is None:
+        errors.append("Unknown status filter was ignored.")
+    date_from, date_to = _date_filter("date_from", errors), _date_filter("date_to", errors)
+    found = OrderRepository().search(status=status, date_from=date_from, date_to=date_to)
+    customers = CustomerRepository().get_many(o.customer_id for o in found)
+    return render_template("admin/orders/list.html", orders=found, customers=customers, errors=errors,
+                           statuses=list(OrderStatus), selected_status=status,
+                           date_from=date_from, date_to=date_to)
+
+
+@bp.route("/orders/<int:order_id>")
+@admin_required
+def order_detail(order_id):
+    order = OrderRepository().get(order_id) or abort(404)
+    items = FoodItemRepository().get_many(line.food_item_id for line in order.lines)
+    return render_template("admin/orders/detail.html", order=order, items=items,
+                           customer=CustomerRepository().get(order.customer_id),
+                           payment_statuses=list(PaymentStatus),
+                           questions=QuestionRepository().list_by_order(order.id))
+
+
+@bp.route("/orders/<int:order_id>/status", methods=["POST"])
+@admin_required
+def change_order_status(order_id):
+    repo = OrderRepository()
+    order = repo.get(order_id) or abort(404)
+    new_status = OrderStatus._value2member_map_.get(request.form.get("status", ""))
+    try:
+        if new_status is None:
+            raise ValueError("Unknown order status.")
+        order.change_status(new_status)  # the domain model enforces the allowed transitions
+    except ValueError as e:
+        flash(str(e), "error")
+    else:
+        repo.update_status(order)
+        flash(f"Order {order.order_number} is now {new_status.label.lower()}.", "success")
+    return redirect(url_for("admin.order_detail", order_id=order_id))
+
+
+@bp.route("/orders/<int:order_id>/payment", methods=["POST"])
+@admin_required
+def change_payment_status(order_id):
+    repo = OrderRepository()
+    order = repo.get(order_id) or abort(404)
+    new_status = PaymentStatus._value2member_map_.get(request.form.get("payment_status", ""))
+    if new_status is None:
+        flash("Unknown payment status.", "error")
+    else:
+        order.payment_status = new_status
+        repo.update_status(order)
+        flash(f"Payment status for {order.order_number} is now {new_status.label.lower()}.", "success")
+    return redirect(url_for("admin.order_detail", order_id=order_id))
+
+
+# ----------------------------------------------------------------- A4 questions
+
+@bp.route("/questions")
+@admin_required
+def questions():
+    show_all = request.args.get("show") == "all"
+    found = QuestionRepository().search(answered=None if show_all else False)
+    orders = {o.id: o for o in (OrderRepository().get(i) for i in {q.order_id for q in found}) if o}
+    return render_template("admin/questions/list.html", questions=found, orders=orders, show_all=show_all)
+
+
+def _render_question(question, answer_text=None, errors=None, status=200):
+    order = OrderRepository().get(question.order_id)
+    earlier = [q for q in QuestionRepository().list_by_order(question.order_id) if q.id != question.id]
+    return render_template("admin/questions/detail.html", question=question, order=order, earlier=earlier,
+                           answer_text=question.answer if answer_text is None else answer_text,
+                           errors=errors or []), status
+
+
+@bp.route("/questions/<int:question_id>")
+@admin_required
+def question_detail(question_id):
+    return _render_question(QuestionRepository().get(question_id) or abort(404))
+
+
+@bp.route("/questions/<int:question_id>/answer", methods=["POST"])
+@admin_required
+def answer_question(question_id):
+    repo = QuestionRepository()
+    question = repo.get(question_id) or abort(404)
+    text = request.form.get("answer", "")
+    try:
+        question.give_answer(text, datetime.now())
+    except ValueError as e:
+        return _render_question(question, text, [str(e)], status=400)
+    repo.save_answer(question)
+    flash(f"Answer sent to {question.name}.", "success")
+    return redirect(url_for("admin.questions"))

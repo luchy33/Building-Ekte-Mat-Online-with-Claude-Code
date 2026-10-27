@@ -11,7 +11,7 @@ It has a customer shop (menu by event, cart, orders, questions) and an admin pan
 ## MVC layout
 
 - `app/models/` – domain classes (FoodItem, Order, OrderLine, Customer, Question …) and repositories
-- `app/models/repositories/` – the only code that touches storage: SQLite now (Neo4j in Oblig 5) and image files (`ImageStore`)
+- `app/models/repositories/` – the only code that touches storage: SQLite now (Neo4j in Oblig 5), image files (`ImageStore`) and the session cart (`SessionCartRepository`)
 - `app/models/services/` – external services: the Claude image generator (`claude-opus-5-5`, draws SVG)
 - `app/controllers/` – Flask blueprints: `shop`, `account`, `admin`; `auth.py` has login/admin decorators and CSRF
 - `app/templates/` – Jinja2 views, one folder per blueprint
@@ -37,6 +37,8 @@ pytest
 - Tests never call the Claude API; they use `FakeImageGenerator` (`IMAGE_GENERATOR=fake`).
 - Every POST form includes `csrf_token()`; admin routes use `@admin_required`.
 - Generated or uploaded images are untrusted: SVG only via `sanitise_svg`, served only through `image_response`.
+- The cart lives in the session and holds only item ids and quantities; prices always come from `FoodItemRepository`. Minimum-order rules live in `Cart` (`app/models/cart.py`).
+- Order status changes only through `Order.change_status` (allowed transitions in `Order.ALLOWED_TRANSITIONS`); prices are copied into `OrderLine.unit_price_nok` when the order is placed.
 - Synthetic data only.
 - Use British English in code, comments and UI text.
 - All prices are in NOK.

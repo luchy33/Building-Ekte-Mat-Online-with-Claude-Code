@@ -1,4 +1,4 @@
--- Ekte Mat Online - SQLite schema (plans 01-02).
+-- Ekte Mat Online - SQLite schema (plans 01-05).
 -- Money columns are whole NOK. Dates/times are ISO 8601 text.
 
 DROP TABLE IF EXISTS question;
@@ -87,6 +87,7 @@ CREATE TABLE order_line (
 
 CREATE TABLE question (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
+  order_id INTEGER NOT NULL REFERENCES customer_order (id) ON DELETE CASCADE,
   customer_id INTEGER REFERENCES customer (id) ON DELETE SET NULL,
   name TEXT NOT NULL,
   email TEXT NOT NULL,
@@ -96,3 +97,5 @@ CREATE TABLE question (
   created_at TEXT NOT NULL,
   answered_at TEXT
 );
+
+CREATE INDEX question_order_idx ON question (order_id);

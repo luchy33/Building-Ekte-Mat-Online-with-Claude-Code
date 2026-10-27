@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_macros.html" import food_image %}
+{% from "_macros.html" import csrf_field, food_image %}
 {% block title %}Menu – Ekte Mat Online{% endblock %}
 {% block content %}
   <h2>Our menu</h2>
@@ -8,7 +8,7 @@
       <h3>{{ category.label }}</h3>
       <div class="cards">
         {% for item in items %}
-          <article class="card">
+          <article class="card" id="item-{{ category.value }}-{{ item.id }}">
             {{ food_image(item) }}
             <div class="body">
               <h4>{{ item.name_en }}</h4>
@@ -20,6 +20,15 @@
                 <div><small>Allergens: {{ item.sorted_allergens() | map(attribute='label') | join(', ') }}</small></div>
               {% endif %}
               {% for label in item.sorted_dietary_labels() %}<span class="tag">{{ label.label }}</span>{% endfor %}
+              <form method="post" action="{{ url_for('shop.add_to_cart') }}" class="add-to-cart">
+                {{ csrf_field() }}
+                <input type="hidden" name="food_item_id" value="{{ item.id }}">
+                <input type="hidden" name="section" value="{{ category.value }}">
+                <label for="qty-{{ category.value }}-{{ item.id }}">Portions</label>
+                <input type="number" id="qty-{{ category.value }}-{{ item.id }}" name="quantity"
+                       value="{{ item.min_order_quantity }}" min="{{ item.min_order_quantity }}" max="1000" step="1" required>
+                <button type="submit">Add to cart</button>
+              </form>
             </div>
           </article>
         {% endfor %}

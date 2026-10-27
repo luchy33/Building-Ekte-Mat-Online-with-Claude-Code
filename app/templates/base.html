@@ -37,6 +37,25 @@
     button.secondary { background: #888; }
     .row { display: flex; flex-wrap: wrap; gap: 24px; }
     .row > * { flex: 1 1 300px; }
+    .add-to-cart { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 10px; }
+    .add-to-cart input[type=number], .cart-table input[type=number] { width: 80px; padding: 5px; font: inherit; }
+    .cart-table td.number, .cart-table th.number { text-align: right; white-space: nowrap; }
+    .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    td.number, th.number { text-align: right; white-space: nowrap; }
+    .badge { display: inline-block; border-radius: 10px; padding: 1px 9px; font-size: 0.85em; font-weight: 600; white-space: nowrap; }
+    .status-submitted { background: #fff3cd; } .status-approved { background: #d9ecff; }
+    .status-in_preparation { background: #e8ddff; } .status-delivered { background: #dff3dc; }
+    .status-rejected, .status-cancelled { background: #eee; color: #555; }
+    .payment-not_paid { background: #fbe9e7; } .payment-deposit_paid { background: #fff3cd; }
+    .payment-invoiced { background: #d9ecff; } .payment-paid { background: #dff3dc; }
+    tr.has-notes td { background: #fff6e0; }
+    .filters { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; margin: 12px 0; }
+    .filters label { display: flex; flex-direction: column; font-size: 0.9em; gap: 2px; }
+    .filters input, .filters select { padding: 5px; font: inherit; }
+    .guest-row { display: grid; grid-template-columns: 1fr 110px 2fr; gap: 8px; margin-bottom: 8px; }
+    .guest-row input { width: 100%; padding: 6px; font: inherit; }
+    @media (max-width: 600px) { .guest-row { grid-template-columns: 1fr; } }
+    .cart-total { font-size: 1.2em; text-align: right; margin: 16px 0; }
     .preview img { max-width: 100%; border: 1px solid var(--line); border-radius: 6px; background: var(--bg-soft); }
   </style>
 </head>
@@ -45,6 +64,7 @@
     <h1><a href="{{ url_for('shop.index') }}">Ekte Mat</a></h1>
     <nav>
       <a href="{{ url_for('shop.index') }}">Menu</a>
+      <a href="{{ url_for('shop.cart') }}">Cart ({{ cart_count }})</a>
       {% if g.user %}
         {% if g.user.is_admin %}<a href="{{ url_for('admin.index') }}">Admin</a>{% endif %}
         <a href="{{ url_for('account.index') }}">{{ g.user.name }}</a>

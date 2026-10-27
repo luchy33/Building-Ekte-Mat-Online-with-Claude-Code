@@ -55,6 +55,14 @@ class FoodItemRepository:
         row = get_db().execute("SELECT * FROM food_item WHERE id = ?", (item_id,)).fetchone()
         return self._to_item(row) if row else None
 
+    def get_many(self, ids) -> dict[int, FoodItem]:
+        ids = list(ids)
+        if not ids:
+            return {}
+        placeholders = ", ".join("?" * len(ids))
+        rows = get_db().execute(f"SELECT * FROM food_item WHERE id IN ({placeholders})", ids).fetchall()
+        return {row["id"]: self._to_item(row) for row in rows}
+
     def list_all(self, published_only: bool = False) -> list[FoodItem]:
         sql = "SELECT * FROM food_item"
         if published_only:

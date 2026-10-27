@@ -10,7 +10,8 @@ from pathlib import Path
 
 from app import create_app
 from app.models import (Allergen as A, Customer, DeliveryMethod, DietaryLabel as D,
-                        EventCategory as E, FoodItem, GuestGroup, Order, OrderLine)
+                        EventCategory as E, FoodItem, GuestGroup, Order, OrderLine,
+                        OrderStatus as S, PaymentStatus as P)
 from app.models.repositories import CustomerRepository, FoodItemRepository, ImageStore, OrderRepository
 from app.models.repositories.db import init_db
 
@@ -100,22 +101,40 @@ def main() -> None:
             customer.set_password(password)
             customer_repo.add(customer)
 
-        soup, lamb = FOOD_ITEMS[0], FOOD_ITEMS[1]
-        OrderRepository().add(Order(
-            order_number="EM-0001",
-            customer_id=corporate.id,
-            event_type=E.LUNCH_MEETING,
-            event_date=date.today() + timedelta(days=14),
-            delivery_method=DeliveryMethod.DELIVERY,
-            delivery_address="Testgaten 1, 5003 Bergen",
-            guest_groups=[GuestGroup(10, "Main group"),
-                          GuestGroup(2, "Gluten-free", diet_notes="gluten")],
-            lines=[OrderLine(soup.id, 10, soup.price_nok),
-                   OrderLine(lamb.id, 10, lamb.price_nok)],
-        ))
+        # Demo orders covering every status and payment status (A3 filters, C4 and report screenshots).
+        dish = {item.name_en: item for item in FOOD_ITEMS}
+        today = date.today()
+        orders = OrderRepository()
+        demo_orders = [
+            # customer, event, days from today, status, payment, groups, (dish, portions)
+            (corporate, E.LUNCH_MEETING, 14, S.SUBMITTED, P.NOT_PAID,
+             [GuestGroup(10, "Main group"), GuestGroup(2, "Gluten free", "2 guests: gluten free")],
+             [("Fish soup with Bergen cod", 12)]),
+            (private, E.CONFIRMATION, 30, S.APPROVED, P.DEPOSIT_PAID,
+             [GuestGroup(25, "Family"), GuestGroup(3, "Vegetarians", "Vegetarian, one with nut allergy")],
+             [("Slow-cooked lamb from Voss", 25), ("Beetroot and chickpea salad", 8), ("Kransekake (almond ring cake)", 28)]),
+            (corporate, E.CONFERENCE, 3, S.IN_PREPARATION, P.INVOICED,
+             [GuestGroup(40, "Participants"), GuestGroup(4, "Lactose free", "Lactose intolerance")],
+             [("Coffee and cake", 44), ("Fish soup with Bergen cod", 40)]),
+            (private, E.BIRTHDAY, -10, S.DELIVERED, P.PAID,
+             [GuestGroup(15)],
+             [("Tapas platter", 15), ("Coffee and cake", 15)]),
+            (corporate, E.CHRISTMAS_PARTY, 45, S.CANCELLED, P.NOT_PAID,
+             [GuestGroup(30, "Staff")],
+             [("Pinnekjøtt Christmas dinner", 30)]),
+        ]
+        for customer, event, days, status, payment, groups, dishes in demo_orders:
+            orders.add(Order(
+                order_number="", customer_id=customer.id, event_type=event,
+                event_date=today + timedelta(days=days),
+                delivery_method=DeliveryMethod.DELIVERY if customer is corporate else DeliveryMethod.PICK_UP,
+                delivery_address="Testgaten 1, 5003 Bergen" if customer is corporate else None,
+                status=status, payment_status=payment, guest_groups=groups,
+                lines=[OrderLine(dish[name].id, qty, dish[name].price_nok) for name, qty in dishes],
+            ))
 
     print(f"Seeded {len(FOOD_ITEMS)} food items (1 unpublished, {len(FOOD_IMAGES)} with pictures), "
-          "3 customers (1 admin) and 1 sample order.")
+          f"3 customers (1 admin) and {len(demo_orders)} demo orders.")
 
 
 if __name__ == "__main__":
