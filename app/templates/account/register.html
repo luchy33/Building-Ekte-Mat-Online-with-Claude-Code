@@ -6,6 +6,7 @@
   {{ error_list(errors) }}
   <form method="post" class="stacked">
     {{ csrf_field() }}
+    <input type="hidden" name="next" value="{{ next_url }}">
     <label for="name">Name</label>
     <input type="text" id="name" name="name" value="{{ form.get('name', '') }}" required>
     <label for="email">E-mail</label>
@@ -26,5 +27,5 @@
     <input type="password" id="confirm_password" name="confirm_password" required>
     <p><button type="submit">Create account</button></p>
   </form>
-  <p>Already have an account? <a href="{{ url_for('account.login') }}">Log in</a>.</p>
+  <p>Already have an account? <a href="{{ url_for('account.login', next=next_url) if next_url else url_for('account.login') }}">Log in</a>.</p>
 {% endblock %}

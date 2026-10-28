@@ -53,7 +53,7 @@
         <a class="button" href="{{ url_for('shop.checkout') }}">Continue to order</a>
       {% else %}
         <a class="button" href="{{ url_for('account.login', next=url_for('shop.checkout')) }}">Log in to order</a><br>
-        <small>New customer? <a href="{{ url_for('account.register') }}">Create an account</a>. Your cart is kept.</small>
+        <small>New customer? <a href="{{ url_for('account.register', next=url_for('shop.checkout')) }}">Create an account</a>. Your cart is kept.</small>
       {% endif %}
     </p>
   {% else %}

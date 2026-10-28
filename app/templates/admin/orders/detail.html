@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_macros.html" import csrf_field, status_badge, payment_badge, order_summary %}
+{% from "_macros.html" import csrf_field, status_badge, payment_badge, order_summary, question_thread %}
 {% block title %}Order {{ order.order_number }} – Admin{% endblock %}
 {% block content %}
   <h2>Order {{ order.order_number }}</h2>
@@ -46,5 +46,9 @@
   </div>
 
   {{ order_summary(order, items) }}
+
+  <h3 id="questions">Questions from the customer</h3>
+  {{ question_thread(questions, answer_links=true) }}
+
   <p><a href="{{ url_for('admin.orders') }}">Back to all orders</a></p>
 {% endblock %}

@@ -15,4 +15,5 @@
        for {{ latest_order.event_date.strftime('%d.%m.%Y') }} – {{ latest_order.status.label }}.</p>
   {% endif %}
   <p><a class="button" href="{{ url_for('account.orders') }}">My orders ({{ order_count }})</a></p>
+  {% if order_count %}<p class="muted">To ask Ekte Mat a question about an order, open the order and use <em>Ask a question</em>.</p>{% endif %}
 {% endblock %}

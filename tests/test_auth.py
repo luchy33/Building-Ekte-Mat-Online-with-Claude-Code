@@ -25,6 +25,21 @@ def test_register_creates_account_and_logs_in(client, app):
     assert "New Customer" in client.get("/account/").get_data(as_text=True)
 
 
+
+def test_register_from_cart_goes_on_to_checkout(client, food_item):
+    client.post("/cart/add", data={"food_item_id": food_item.id, "quantity": 10})
+    assert "next=/checkout" in client.get("/cart").get_data(as_text=True)
+
+    response = client.post("/account/register", data={**REGISTRATION, "next": "/checkout"})
+
+    assert response.headers["Location"] == "/checkout"
+    assert "Fish soup" in client.get("/checkout").get_data(as_text=True)  # the cart was kept
+
+
+def test_register_ignores_unsafe_next(client):
+    response = client.post("/account/register", data={**REGISTRATION, "next": "https://evil.example"})
+    assert response.headers["Location"].endswith("/account/")
+
 @pytest.mark.parametrize("changes, message", [
     ({"password": "short", "confirm_password": "short"}, "at least 8 characters"),
     ({"confirm_password": "something-else"}, "do not match"),

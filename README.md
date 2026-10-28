@@ -2,9 +2,9 @@
 
 Ordering system for Ekte Mat AS, a fictional catering company in Bergen. It replaces orders by e-mail, phone and Excel. Built with Flask (MVC) for INFO212 Oblig 4. All data is synthetic.
 
-- **Shop**: menu cards grouped by event (C1) and a shopping cart with an estimated total; quantities below a dish's minimum order are refused (C2). Logged-in customers send the order with event date, delivery and guest groups with allergy notes (C3). Questions come in a later plan.
-- **Account**: register, log in and log out (customers and admins share one login page); *My orders* shows each order with its status and payment status (C4)
-- **Admin**: add, edit and remove food items (A1), and upload or AI-generate their pictures with a preview before saving (A2). Orders can be filtered by status and event date, and each order's status and payment status is managed on its own page (A3). Questions come in a later plan.
+- **Shop**: menu cards grouped by event (C1) and a shopping cart with an estimated total; quantities below a dish's minimum order are refused (C2). Logged-in customers send the order with event date, delivery and guest groups with allergy notes (C3).
+- **Account**: register, log in and log out (customers and admins share one login page); *My orders* shows each order with its status and payment status (C4). On an order's page the customer asks questions about that order and reads Ekte Mat's answers (C5).
+- **Admin**: add, edit and remove food items (A1), and upload or AI-generate their pictures with a preview before saving (A2). Orders can be filtered by status and event date, and each order's status and payment status is managed on its own page (A3). Customers' questions are listed with the unanswered ones first and answered (or the answer changed) from their own page (A4).
 
 ## Getting started
 
@@ -34,7 +34,9 @@ pytest
 
 `flask --app app init-db` creates empty tables without seed data. The SQLite file is `instance/ektemat.sqlite`.
 
-Seeded accounts: `admin@ektemat.example` (admin), `private.customer@example.com` and `lunch@corporate.example.com`. They all use the password set in `SEED_PASSWORD` (default `ektemat-dev`). `python seed.py` also deletes uploaded pictures, attaches the team's dish pictures from `seed_data/images/` and creates 5 demo orders covering every order and payment status.
+Seeded accounts: `admin@ektemat.example` (admin), `private.customer@example.com` and `lunch@corporate.example.com`. They all use the password set in `SEED_PASSWORD` (default `ektemat-dev`). `python seed.py` also deletes uploaded pictures, attaches the team's dish pictures from `seed_data/images/` and creates 5 demo orders covering every order and payment status, plus 3 demo questions (1 answered).
+
+**After pulling a change to `app/models/repositories/schema.sql`, run `python seed.py` again.** There are no migrations, so an old database gives errors (for example, questions need the `order_id` column added in plan 05).
 
 ### AI-generated pictures (A2)
 

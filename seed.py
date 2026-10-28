@@ -5,14 +5,15 @@ WARNING: drops all tables first. Synthetic data only – no real customers.
 """
 import os
 import shutil
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 from app import create_app
 from app.models import (Allergen as A, Customer, DeliveryMethod, DietaryLabel as D,
                         EventCategory as E, FoodItem, GuestGroup, Order, OrderLine,
-                        OrderStatus as S, PaymentStatus as P)
-from app.models.repositories import CustomerRepository, FoodItemRepository, ImageStore, OrderRepository
+                        OrderStatus as S, PaymentStatus as P, Question)
+from app.models.repositories import (CustomerRepository, FoodItemRepository, ImageStore, OrderRepository,
+                                     QuestionRepository)
 from app.models.repositories.db import init_db
 
 DEV_PASSWORD = "ektemat-dev"
@@ -123,18 +124,36 @@ def main() -> None:
              [GuestGroup(30, "Staff")],
              [("Pinnekjøtt Christmas dinner", 30)]),
         ]
+        saved = []
         for customer, event, days, status, payment, groups, dishes in demo_orders:
-            orders.add(Order(
+            saved.append(orders.add(Order(
                 order_number="", customer_id=customer.id, event_type=event,
                 event_date=today + timedelta(days=days),
                 delivery_method=DeliveryMethod.DELIVERY if customer is corporate else DeliveryMethod.PICK_UP,
                 delivery_address="Testgaten 1, 5003 Bergen" if customer is corporate else None,
                 status=status, payment_status=payment, guest_groups=groups,
                 lines=[OrderLine(dish[name].id, qty, dish[name].price_nok) for name, qty in dishes],
-            ))
+            )))
+
+        # Demo questions (C5/A4): one answered, two waiting for an answer.
+        lunch, confirmation, conference = saved[0], saved[1], saved[2]
+        questions = QuestionRepository()
+        answered = Question.for_order(confirmation, private, "Delivery time",
+                                      "Can you deliver at 17:00 instead of picking up? The party starts at 18:00.")
+        answered.give_answer("Yes, delivery at 17:00 is fine. We will add the delivery fee to the invoice.",
+                             datetime.now())
+        demo_questions = [
+            answered,
+            Question.for_order(lunch, corporate, "Gluten-free bread",
+                               "Can the two gluten-free guests get gluten-free bread with the fish soup?"),
+            Question.for_order(conference, corporate, "Extra participants",
+                               "We may be 4 more participants. Can we change the number until the day before?"),
+        ]
+        for question in demo_questions:
+            questions.add(question)
 
     print(f"Seeded {len(FOOD_ITEMS)} food items (1 unpublished, {len(FOOD_IMAGES)} with pictures), "
-          f"3 customers (1 admin) and {len(demo_orders)} demo orders.")
+          f"3 customers (1 admin), {len(demo_orders)} demo orders and {len(demo_questions)} demo questions.")
 
 
 if __name__ == "__main__":

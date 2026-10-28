@@ -56,6 +56,11 @@
     .guest-row input { width: 100%; padding: 6px; font: inherit; }
     @media (max-width: 600px) { .guest-row { grid-template-columns: 1fr; } }
     .cart-total { font-size: 1.2em; text-align: right; margin: 16px 0; }
+    .question { border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; margin: 12px 0; max-width: 720px; }
+    .question p { margin: 4px 0; }
+    .question-body { white-space: pre-line; }
+    .answer { background: var(--bg-soft); border-left: 3px solid var(--accent); padding: 6px 12px; margin-top: 8px; }
+    .badge.waiting { background: #fff3cd; } .badge.answered { background: #dff3dc; }
     .preview img { max-width: 100%; border: 1px solid var(--line); border-radius: 6px; background: var(--bg-soft); }
   </style>
 </head>
@@ -66,7 +71,9 @@
       <a href="{{ url_for('shop.index') }}">Menu</a>
       <a href="{{ url_for('shop.cart') }}">Cart ({{ cart_count }})</a>
       {% if g.user %}
-        {% if g.user.is_admin %}<a href="{{ url_for('admin.index') }}">Admin</a>{% endif %}
+        {% if g.user.is_admin %}<a href="{{ url_for('admin.index') }}">Admin</a>
+          <a href="{{ url_for('admin.questions') }}">Questions</a>{% endif %}
+        {% if not g.user.is_admin %}<a href="{{ url_for('account.orders') }}">My orders</a>{% endif %}
         <a href="{{ url_for('account.index') }}">{{ g.user.name }}</a>
         <form method="post" action="{{ url_for('account.logout') }}">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

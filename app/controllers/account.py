@@ -63,6 +63,7 @@ def ask_question(order_id):
 @bp.route("/register", methods=["GET", "POST"])
 def register():
     errors, form = [], request.form
+    next_url = request.values.get("next", "")
     if request.method == "POST":
         customer_type = form.get("customer_type", "private")
         customer = Customer(
@@ -84,8 +85,9 @@ def register():
             repo.add(customer)
             log_in(customer)
             flash(f"Welcome, {customer.name}! Your account has been created.", "success")
-            return redirect(url_for("account.index"))
-    return render_template("account/register.html", errors=errors, form=form)
+            # A new customer coming from the cart goes straight on to the order (C3).
+            return redirect(next_url if is_safe_next(next_url) else url_for("account.index"))
+    return render_template("account/register.html", errors=errors, form=form, next_url=next_url)
 
 
 @bp.route("/login", methods=["GET", "POST"])

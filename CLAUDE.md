@@ -42,3 +42,4 @@ pytest
 - Synthetic data only.
 - Use British English in code, comments and UI text.
 - All prices are in NOK.
+- Questions always belong to an order; customers only see questions on their own orders.
